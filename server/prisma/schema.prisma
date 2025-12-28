@@ -12,5 +12,49 @@ model User {
   email        String   @unique
   passwordHash String
   createdAt    DateTime @default(now())
+  attempts Attempt[]
+
 }
+
+
+model Attempt {
+  id         String   @id @default(cuid())
+  userId     String
+  createdAt  DateTime @default(now())
+  finishedAt DateTime?
+  correct    Boolean?
+
+  // practice-mode fields
+  prompt          String?   // e.g. "0.1 + 0.2"
+
+  userAnswer      Float?    // what they ended on (computed from soroban)
+
+  expectedAnswer Float?
+  user       User     @relation(fields: [userId], references: [id])
+  moves Move[]
+
+
+  @@index([userId])
+}
+
+
+model Move {
+  id         String   @id @default(cuid())
+  attemptId  String
+  createdAt  DateTime @default(now())
+
+  // what changed
+  rodIndex   Int?
+  beadType   String?  // "heaven" or "earth"
+  direction  String?  // "up" or "down"
+
+  // full state before/after the move (JSON)
+  beforeState Json
+  afterState  Json
+
+  attempt    Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId])
+}
+
 
