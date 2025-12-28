@@ -19,29 +19,38 @@ export default function SorobanSvg({
 }: Props) {
   // --- layout constants ---
   const padX = 40;
-  const topPad = 30;
-  const bottomPad = 28;
+ // const topPad = 30;
+  //const bottomPad = 28;
 
   const frameRx = 22;
 
-  const beamY = 190; // middle bar
-  const heavenRestY = 85; // heaven bead "up" (away from beam)
-  const heavenActiveY = beamY - 42; // heaven bead "down" (touching beam)
+   // bead geometry (diamond-ish)
+  const beadW = 44;
+  const beadH = 26;
+
+  const beamY = 165; // middle bar
+  const heavenRestY = 92; // heaven bead "up" (away from beam)
+  const heavenActiveY = beamY - 30; // heaven bead "down" (touching beam)
 
   // Earth beads: 4 beads per rod
-  const earthRowTop = beamY + 55; // starting row (closest to beam)
-  const earthRowGap = 46; // distance between earth beads rows
-  const earthRestOffset = 28; // extra push downward for "rest" beads
+  const earthRowTop = beamY + 48; // starting row (closest to beam)
+  const earthRowGap = 37; // distance between earth beads rows
+  const earthRestOffset = 22; // extra push downward for "rest" beads
 
-  const rodTop = topPad;
-  const rodBottom = height - bottomPad;
+  const rodCap = 18; // visible rod above/below beads
+
+  const lowestEarthRestY =
+  earthRowTop + (4 - 1) * earthRowGap + earthRestOffset;
+
+
+  const rodTop = heavenRestY - beadH / 2 - rodCap;
+  const rodBottom = lowestEarthRestY + beadH / 2 + rodCap;
+
 
   const trackWidth = width - padX * 2;
   const spacing = trackWidth / (RODS - 1);
 
-  // bead geometry (diamond-ish)
-  const beadW = 44;
-  const beadH = 26;
+ 
 
   function cloneState(s: SorobanState): SorobanState {
     return { heaven: [...s.heaven], earth: [...s.earth] };
@@ -96,6 +105,30 @@ export default function SorobanSvg({
           <feDropShadow dx="0" dy="3" stdDeviation="3" floodOpacity="0.28" />
         </filter>
 
+
+
+
+
+
+        {/* soft outer shadow for the whole abacus */}
+        <filter id="frameShadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="10" stdDeviation="10" floodOpacity="0.35" />
+        </filter>
+
+        {/* inner glow / bevel look */}
+        <linearGradient id="frameStrokeLight" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="rgba(71, 62, 65, 1)" />
+          <stop offset="35%" stopColor="rgba(18, 17, 17, 0.53)" />
+          <stop offset="100%" stopColor="rgba(5, 5, 5, 1)" />
+        </linearGradient>
+
+        <linearGradient id="frameStrokeDark" x1="1" y1="1" x2="0" y2="0">
+          <stop offset="0%" stopColor="rgba(0,0,0,0.45)" />
+          <stop offset="55%" stopColor="rgba(0,0,0,0.16)" />
+          <stop offset="100%" stopColor="rgba(0, 0, 0, 0)" />
+        </linearGradient>
+
+
         {/* orange bead body: glossy */}
         <radialGradient id="beadBody" cx="30%" cy="25%" r="80%">
           <stop offset="0%" stopColor="#fff2dd" stopOpacity="1" />
@@ -137,7 +170,35 @@ export default function SorobanSvg({
         height={height - 20}
         rx={frameRx}
         fill="url(#frameGrad)"
+        filter="url(#frameShadow)"
       />
+
+      {/* 3D bevel strokes */}
+      <rect
+        x={12}
+        y={12}
+        width={width - 24}
+        height={height - 24}
+        rx={frameRx - 2}
+        fill="none"
+        stroke="url(#frameStrokeLight)"
+        strokeWidth={3}
+        opacity={0.9}
+      />
+
+      <rect
+        x={14}
+        y={14}
+        width={width - 28}
+        height={height - 28}
+        rx={frameRx - 4}
+        fill="none"
+        stroke="url(#frameStrokeDark)"
+        strokeWidth={3}
+        opacity={0.9}
+      />
+
+
 
       {/* inner bed */}
       <rect
@@ -157,7 +218,7 @@ export default function SorobanSvg({
         width={width - 48}
         height={20}
         rx={10}
-        fill="#faf7f0"
+        fill="#2a2a2a"
         opacity={0.9}
       />
       <rect
@@ -166,7 +227,7 @@ export default function SorobanSvg({
         width={width - 68}
         height={12}
         rx={8}
-        fill="#2a2a2a"
+        fill="#faf7f0"
         opacity={0.55}
       />
 

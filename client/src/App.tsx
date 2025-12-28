@@ -149,7 +149,7 @@ return (
     async function logout() {
     await api.post("/auth/logout");
     setMe(null);
-    setStatus("❌ Not authenticated");
+    setStatus("Not authenticated");
   }
 }
 

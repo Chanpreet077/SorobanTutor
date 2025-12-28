@@ -93,19 +93,19 @@ router.post("/:id/hint", requireAuth, async (req, res) => {
 
         if (curHeaven !== tgtHeaven) {
           return res.json({
-            rodIndex: i,
+            rodIndex: i + 1,
             beadType: "heaven",
             direction: direction,
-            reason: `Adjust 5-bead on rod ${i} to match target digit`,
+            reason: `Adjust 5-bead on rod ${i + 1} to match target digit`,
           });
         }
 
         // otherwise adjust earth beads
         return res.json({
-          rodIndex: i,
+          rodIndex: i + 1,
           beadType: "earth",
           direction: direction,
-          reason: `Adjust 1-beads on rod ${i} to match target digit`,
+          reason: `Adjust 1-beads on rod ${i + 1} to match target digit`,
         });
       }
     }

@@ -2,6 +2,9 @@ import { useState } from "react";
 import { api } from "./lib/api";
 import { emptyState } from "./soroban";
 import SorobanSvg from "./components/sorobanSvg";
+import { stateToNumberClient } from "./SorobanMath";
+
+
 
 
 type Attempt = {
@@ -22,6 +25,8 @@ export default function Practice() {
     setMsg("");
     setAttempt(null);
     setState(emptyState());
+    setHint(null);
+
 
     try {
       const res = await api.post<{ attempt: Attempt }>("/attempts");
@@ -49,6 +54,39 @@ export default function Practice() {
       setMsg("Finish failed (likely no moves yet)");
     }
   }
+
+
+  type HintResult =
+  | { done: true; reason: string; currentValue: number }
+  | { rodIndex: number; beadType: "heaven" | "earth"; direction: "up" | "down"; reason: string };
+
+    const [hint, setHint] = useState<HintResult | null>(null);
+    const [hintLoading, setHintLoading] = useState(false);
+
+
+
+async function getHint() {
+  if (!attempt) return;
+
+  setHintLoading(true);
+  setMsg("");
+
+  try {
+    const res = await api.post<HintResult>(`/attempts/${attempt.id}/hint`, {
+      currentState: state,
+    });
+
+    setHint(res.data);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (e: any) {
+    const errMsg = e?.response?.data?.error || e?.message || "Hint failed";
+    setMsg(errMsg);
+  } finally {
+    setHintLoading(false);
+  }
+}
+
+
 
 return (
   <div
@@ -154,6 +192,23 @@ return (
                 >
                   Finish
                 </button>
+
+                <button
+                onClick={getHint}
+                disabled={hintLoading}
+                style={{
+                    padding: "12px 16px",
+                    borderRadius: 12,
+                    border: "1px solid rgba(0,0,0,0.15)",
+                    background: "white",
+                    cursor: hintLoading ? "not-allowed" : "pointer",
+                    fontSize: 16,
+                    opacity: hintLoading ? 0.6 : 1,
+                }}
+                >
+                {hintLoading ? "Getting hint..." : "Hint"}
+                </button>
+
               </div>
             </div>
 
@@ -174,13 +229,29 @@ return (
             }}
             >
             <div style={{ width: "100%", maxWidth: 980, margin: "0 auto" }}>
-                <SorobanSvg
-                state={state}
-                onChange={(next) => {
-                    setState(next);
-                    // next step: POST /attempts/:id/moves with before/after
-                }}
-                />
+            <SorobanSvg
+            state={state}
+            onChange={(next, meta) => {
+                const before = state;
+                setState(next);
+
+                if (!attempt) return;
+
+                api.post(`/attempts/${attempt.id}/moves`, {
+                beforeState: before,
+                afterState: next,
+                rodIndex: meta.rodIndex,
+                beadType: meta.beadType,
+                })
+                .catch((e) => {
+                const status = e?.response?.status;
+                const errMsg = e?.response?.data?.error || e?.message || "unknown";
+                console.error("MOVE POST ERROR:", e);
+                setMsg(`MOVE LOG FAILED (${status}): ${errMsg}`);
+                });
+            }}
+            />
+
             </div>
             </div>
 
@@ -197,8 +268,9 @@ return (
               }}
             >
               <div style={{ color: "#666" }}>
-                <b>Expected:</b> {attempt.expectedAnswer ?? "—"} &nbsp; | &nbsp;
-                <b>Your:</b> {attempt.userAnswer ?? "—"} &nbsp; | &nbsp;
+                <b>Expected:</b> {attempt.expectedAnswer ?? "—"} &nbsp; 
+                <p><b>Your:</b> {stateToNumberClient(state)}</p>
+
                 <b>Correct:</b> {String(attempt.correct)}
               </div>
 
@@ -215,6 +287,55 @@ return (
                   {msg}
                 </div>
               )}
+
+
+
+            {hint && (
+            <div
+                style={{
+                marginTop: 14,
+                padding: "12px 14px",
+                borderRadius: 14,
+                background: "#fff7ed",
+                border: "1px solid rgba(234, 88, 12, 0.25)",
+                color: "#7c2d12",
+                display: "flex",
+                gap: 12,
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                }}
+            >
+                {"done" in hint ? (
+                <div>
+                    <b>✅ You’re already at the answer.</b>
+                    <div style={{ marginTop: 4 }}>{hint.reason}</div>
+                </div>
+                ) : (
+                <div>
+                    <b>Hint:</b>{" "}
+                    Move <b>{hint.beadType}</b> on rod <b>{hint.rodIndex}</b>{" "}
+                    <b>{hint.direction}</b>.
+                    <div style={{ marginTop: 4, opacity: 0.9 }}>{hint.reason}</div>
+                </div>
+                )}
+
+                <button
+                onClick={() => setHint(null)}
+                style={{
+                    padding: "8px 12px",
+                    borderRadius: 12,
+                    border: "1px solid rgba(0,0,0,0.15)",
+                    background: "white",
+                    cursor: "pointer",
+                }}
+                >
+                Dismiss
+                </button>
+            </div>
+            )}
+
+
             </div>
           </>
         )}
